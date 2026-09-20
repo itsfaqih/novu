@@ -1,4 +1,11 @@
-import { RiAngularjsFill, RiJavascriptFill, RiNextjsFill, RiReactjsFill, RiRemixRunFill } from 'react-icons/ri';
+import {
+  RiAngularjsFill,
+  RiJavascriptFill,
+  RiNextjsFill,
+  RiReactjsFill,
+  RiRemixRunFill,
+  RiSvelteFill,
+} from 'react-icons/ri';
 import { API_HOSTNAME, IS_EU } from '@/config';
 import { apiHostnameManager } from '@/utils/api-hostname-manager';
 import { Language } from '../primitives/code-block';
@@ -423,6 +430,73 @@ novu.mountComponent({
         },
       ],
       'JavaScript',
+      applicationIdentifier,
+      subscriberId
+    ),
+  },
+  {
+    name: 'Svelte',
+    icon: <RiSvelteFill className="h-8 w-8 text-[#FF3E00]" />,
+    installSteps: stepsByMethod(
+      installationMethod,
+      [
+        commonInstallStep('@novu/js'),
+        {
+          title: 'Add the Inbox code to your Svelte app',
+          description: 'Mount the Inbox UI from @novu/js in your header, navbar, or sidebar.',
+          code: `<script lang="ts">
+  import { onMount } from 'svelte';
+  import type { Novu, NovuOptions } from '@novu/js';
+  import type { NovuUI } from '@novu/js/ui';
+
+  let inboxElement: HTMLDivElement | undefined;
+
+  const options = {
+    applicationIdentifier: 'YOUR_APPLICATION_IDENTIFIER',
+    subscriber: 'YOUR_SUBSCRIBER_ID',${optionalObjectProps('    ')}
+  } satisfies NovuOptions;
+
+  onMount(() => {
+    let disposed = false;
+    let novu: Novu | undefined;
+    let novuUI: NovuUI | undefined;
+
+    void Promise.all([import('@novu/js'), import('@novu/js/ui')]).then(([{ Novu }, { NovuUI }]) => {
+      const element = inboxElement;
+      if (disposed || !element) return;
+
+      novu = new Novu(options);
+      novuUI = new NovuUI({
+        options,
+        novu,
+        appearance: {
+          variables: {
+            colorPrimary: 'YOUR_PRIMARY_COLOR',
+            colorForeground: 'YOUR_FOREGROUND_COLOR'
+          }
+        }
+      });
+
+      novuUI.mountComponent({ name: 'Inbox', element });
+    });
+
+    return () => {
+      disposed = true;
+      const element = inboxElement;
+      if (novuUI && element) novuUI.unmountComponent(element);
+      novuUI?.unmount();
+      void novu?.socket.disconnect();
+    };
+  });
+</script>
+
+<div bind:this={inboxElement}></div>`,
+          codeLanguage: 'svelte',
+          codeTitle: 'Inbox.svelte',
+          tip: customizationTip,
+        },
+      ],
+      'Svelte',
       applicationIdentifier,
       subscriberId
     ),

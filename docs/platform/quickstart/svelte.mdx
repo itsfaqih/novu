@@ -1,0 +1,285 @@
+---
+title: 'Svelte In-App Notifications Quickstart - Novu Inbox'
+description: "Create a Novu account and integrate the Novu Inbox component into your Svelte application to display real-time in-app notifications for your subscribers."
+sidebarTitle: 'Svelte'
+---
+
+Add real-time in-app notifications to Svelte using the Novu Inbox component and the `@novu/js` SDK.
+
+<Note>
+  This guide uses `@novu/js` to build the Inbox component in Svelte. Novu does not provide a native Svelte Inbox component. Replace `YOUR_APPLICATION_IDENTIFIER` and `YOUR_SUBSCRIBER_ID` with values from your Novu Dashboard. SvelteKit renders on the server by default, so load the browser-only SDK inside `onMount`.
+</Note>
+
+<Prompt description="Add Novu Inbox to my Svelte app" icon="sparkles" actions={["copy", "cursor"]}>
+# Add Novu Inbox to Svelte App
+
+Install `@novu/js`. Mount the Inbox in your header, navbar, or sidebar. In SvelteKit, load the browser-only SDK inside `onMount`.
+
+Latest docs: https://docs.novu.co/platform/quickstart/svelte
+
+## Install
+
+```bash
+npm install @novu/js
+```
+
+## Component
+
+```svelte
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import type { Novu, NovuOptions } from '@novu/js';
+  import type { NovuUI } from '@novu/js/ui';
+
+  let inboxElement: HTMLDivElement | undefined;
+
+  const options = {
+    applicationIdentifier: 'YOUR_APPLICATION_IDENTIFIER',
+    subscriber: 'YOUR_SUBSCRIBER_ID'
+  } satisfies NovuOptions;
+
+  onMount(() => {
+    let disposed = false;
+    let novu: Novu | undefined;
+    let novuUI: NovuUI | undefined;
+
+    void Promise.all([import('@novu/js'), import('@novu/js/ui')]).then(([{ Novu }, { NovuUI }]) => {
+      const element = inboxElement;
+      if (disposed || !element) return;
+
+      novu = new Novu(options);
+      novuUI = new NovuUI({ options, novu });
+      novuUI.mountComponent({ name: 'Inbox', element });
+    });
+
+    return () => {
+      disposed = true;
+      const element = inboxElement;
+
+      if (novuUI && element) {
+        novuUI.unmountComponent(element);
+      }
+
+      novuUI?.unmount();
+      void novu?.socket.disconnect();
+    };
+  });
+</script>
+
+<div bind:this={inboxElement}></div>
+```
+
+## Add the component to your layout
+
+Import the component into the existing layout and place it where subscribers should see their notifications.
+
+## Subscriber
+
+Use the app's existing auth system to get a stable subscriber identifier for `subscriber`. If no auth system exists, use `YOUR_SUBSCRIBER_ID`.
+
+## Appearance
+
+Extract design tokens from the host app and apply them through the `appearance` configuration. Only set values from the host app's design system.
+
+## SvelteKit routing
+
+Use SvelteKit's `goto` for client-side Inbox navigation. Import `goto` from `$app/navigation` and pass `routerPush: (path) => goto(path)` to the `NovuUI` options.
+
+## Rules
+
+ALWAYS:
+
+- Detect the project's package manager and use it for installation
+- Load `@novu/js` and `@novu/js/ui` inside `onMount`
+- Mount the Inbox inline with `bind:this`
+- Return cleanup that unmounts the component and disconnects the socket
+- Use the existing auth system to source `subscriber` when available
+
+NEVER:
+
+- Install a separate Svelte Inbox package
+- Render the Inbox during server-side rendering
+- Create wrapper components or new pages just for the Inbox
+- Add code comments
+- Introduce styles not in the host app
+
+## Verify Before Responding
+
+1. Is `@novu/js` installed with the project's package manager?
+2. Are the browser-only imports inside `onMount`?
+3. Is the Inbox mounted inline in existing UI?
+4. Does cleanup unmount the component and disconnect the socket?
+5. Is `subscriber` sourced from the auth system when available?
+
+If any fails, revise.
+</Prompt>
+
+<Steps>
+  <Step>
+  ### Create a Novu account
+    [Create a Novu account](https://dashboard.novu.co/auth/sign-up) or [sign in](https://dashboard.novu.co/auth/sign-in) to access the Novu dashboard.
+  </Step>
+
+  <Step>
+  ### Create a Svelte application
+    Run the following command to create a new SvelteKit app. Select TypeScript when prompted:
+
+    ```package-install
+    npx sv create novu-inbox-svelte
+    ```
+  </Step>
+
+  <Step>
+  ### Install `@novu/js`
+  The [Novu JavaScript SDK](/platform/sdks/javascript) gives you access to the Inbox component.
+
+  Run the following command to install the SDK:
+
+    ```package-install
+    npm install @novu/js
+    ```
+  </Step>
+
+  <Step>
+  ### Add the Inbox component
+  Create `src/lib/NovuInbox.svelte` and pass your <Tooltip tip="The application identifier is a unique identifier for your application. You can find it in the Novu Dashboard under the API keys page.">applicationIdentifier</Tooltip> and subscriber identifier:
+
+  ```svelte title="src/lib/NovuInbox.svelte"
+  <script lang="ts">
+    import { onMount } from 'svelte';
+    import type { Novu, NovuOptions } from '@novu/js';
+    import type { NovuUI } from '@novu/js/ui';
+
+    let inboxElement: HTMLDivElement | undefined;
+
+    const options = {
+      applicationIdentifier: 'YOUR_APPLICATION_IDENTIFIER',
+      subscriber: 'YOUR_SUBSCRIBER_ID'
+    } satisfies NovuOptions;
+
+    onMount(() => {
+      let disposed = false;
+      let novu: Novu | undefined;
+      let novuUI: NovuUI | undefined;
+
+      void Promise.all([import('@novu/js'), import('@novu/js/ui')]).then(([{ Novu }, { NovuUI }]) => {
+        const element = inboxElement;
+        if (disposed || !element) return;
+
+        novu = new Novu(options);
+        novuUI = new NovuUI({
+          options,
+          novu,
+          appearance: {
+            variables: {
+              colorPrimary: '#00D1B2',
+              colorForeground: '#1A1A1A'
+            }
+          }
+        });
+
+        novuUI.mountComponent({
+          name: 'Inbox',
+          element
+        });
+      });
+
+      return () => {
+        disposed = true;
+        const element = inboxElement;
+
+        if (novuUI && element) {
+          novuUI.unmountComponent(element);
+        }
+
+        novuUI?.unmount();
+        void novu?.socket.disconnect();
+      };
+    });
+  </script>
+
+  <div bind:this={inboxElement}></div>
+  ```
+
+  The dynamic imports keep the browser-only UI code out of server execution. The disposed flag prevents a late import from mounting Inbox after the component has been destroyed.
+
+  Replace the placeholders with values from your Novu dashboard. Use a stable subscriber identifier from your auth system for `subscriber`.
+
+  To use SvelteKit client-side routing, import `goto` from `$app/navigation` and add `routerPush: (path) => goto(path)` to the `new NovuUI` options.
+  </Step>
+
+  <Step>
+  ### Add the Inbox component to your application
+  Import and use `NovuInbox` in `src/routes/+layout.svelte` so it appears in your existing application layout:
+
+  ```svelte title="src/routes/+layout.svelte"
+  <script lang="ts">
+    import NovuInbox from '$lib/NovuInbox.svelte';
+  </script>
+
+  <header>
+    <NovuInbox />
+  </header>
+
+  <slot />
+  ```
+
+  Keep the component inline in your existing layout. Do not create a separate page just for the Inbox.
+  </Step>
+
+  <Step>
+  ### Run your application
+  Start your development server:
+
+  ```package-install
+  npm run dev
+  ```
+
+  Once the application is running, the Inbox component will appear in your layout. Currently, there are no notifications. Let's trigger one!
+  </Step>
+
+  <Step>
+  ### Trigger your first notification
+
+  In this step, you'll create a simple workflow to send your first notification through the Inbox component. Follow these steps to set up and trigger a workflow from your Novu dashboard.
+
+  1. Go to your [Novu dashboard](https://dashboard-v2.novu.co/auth/sign-in).
+  2. In the sidebar, click **Workflows**.
+  3. Click **Create Workflow**. Enter a name for your workflow, such as "Welcome Notification".
+  4. Click **Create Workflow** to save it.
+  5. Click the **Add Step** icon in the workflow editor and select **In-App** as the step type.
+  6. In the In-App template editor, enter the following:
+
+    - **Subject**: "Welcome to Novu"
+    - **Body**: "Hello, world!"
+
+  7. Once you've added the subject and body, close the editor.
+  8. Click **Trigger**.
+  9. Click **Test Workflow**.
+  </Step>
+
+  <Step>
+  ### View the notification in your app
+  Go back to your Svelte app and open the Inbox component.
+
+  You should see the notification you just sent from Novu! 🎉
+  </Step>
+</Steps>
+
+## Next steps
+
+<Columns cols={2}>
+  <Card
+    title="Javascript SDK API Reference"
+    icon="library"
+    href="/platform/sdks/javascript"
+  >
+    Explore the JavaScript SDK API reference for more advanced use cases.
+  </Card>
+  <Card title="Build Workflow" icon="workflow" href="/platform/workflow">
+    Design and manage advanced notification workflows.
+  </Card>
+  <Card title="Multi Tenancy" icon="square-code" href="/platform/concepts/tenants">
+    Manage multiple tenants within an organization.
+  </Card>
+</Columns>
