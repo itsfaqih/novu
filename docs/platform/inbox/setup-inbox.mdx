@@ -166,6 +166,96 @@ NEVER:
 If any fails, revise.
 </Prompt>
   </Tab>
+  <Tab title="Svelte">
+<Prompt description="Add Novu Inbox to my Svelte app" icon="sparkles" actions={["copy", "cursor"]}>
+# Add Novu Inbox to Svelte App
+
+Install `@novu/js`. Mount `NovuUI` from `@novu/js/ui` into a stable element in your header, navbar, or sidebar.
+
+Latest docs: https://docs.novu.co/platform/quickstart/svelte
+
+## Install
+
+```bash
+npm install @novu/js
+```
+
+## Mount Inbox
+
+```svelte
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import type { Novu, NovuOptions } from '@novu/js';
+  import type { NovuUI } from '@novu/js/ui';
+
+  let inboxElement: HTMLDivElement | undefined;
+
+  const options = {
+    applicationIdentifier: 'YOUR_APPLICATION_IDENTIFIER',
+    subscriber: 'YOUR_SUBSCRIBER_ID'
+  } satisfies NovuOptions;
+
+  onMount(() => {
+    let disposed = false;
+    let novu: Novu | undefined;
+    let novuUI: NovuUI | undefined;
+
+    void Promise.all([import('@novu/js'), import('@novu/js/ui')]).then(([{ Novu }, { NovuUI }]) => {
+      const element = inboxElement;
+      if (disposed || !element) return;
+
+      novu = new Novu(options);
+      novuUI = new NovuUI({ options, novu });
+      novuUI.mountComponent({ name: 'Inbox', element });
+    });
+
+    return () => {
+      disposed = true;
+      const element = inboxElement;
+      if (novuUI && element) novuUI.unmountComponent(element);
+      novuUI?.unmount();
+      void novu?.socket.disconnect();
+    };
+  });
+</script>
+
+<div bind:this={inboxElement}></div>
+```
+
+## Subscriber
+
+Use the app's existing auth system to source a unique user identifier for `subscriber`. If no auth system exists, use `YOUR_SUBSCRIBER_ID`.
+
+## Appearance
+
+Extract design tokens from the host app and apply them through the `appearance` prop. Only include values from the host design system.
+
+## Rules
+
+ALWAYS:
+
+- Detect the project's package manager and use it for installation
+- Extract design tokens and apply them through the `appearance` option passed to `NovuUI`
+- Mount Inbox inline in existing UI - no new pages or framework packages
+- Use TypeScript and follow Svelte conventions
+- Use the existing auth system to source `subscriber` when available
+
+NEVER:
+
+- Add empty appearance values or placeholder props
+- Create a published framework wrapper or a new page just for the inbox
+- Add code comments or unused imports
+
+## Verify Before Responding
+
+1. Is `@novu/js` installed with the project's package manager?
+2. Is `NovuUI` mounted inline in existing UI?
+3. Are the application identifier and `subscriber` values non-empty and properly typed?
+4. Are the UI renderer and socket cleaned up when the component is destroyed?
+
+If any fails, revise.
+</Prompt>
+  </Tab>
 </Tabs>
 
 ## Try Inbox in keyless mode

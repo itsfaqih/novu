@@ -77,7 +77,8 @@
                   "platform/quickstart/angular",
                   "platform/quickstart/vue",
                   "platform/quickstart/nuxt",
-                  "platform/quickstart/vanilla-js"
+                  "platform/quickstart/vanilla-js",
+                  "platform/quickstart/svelte"
                 ]
               }
             ]
